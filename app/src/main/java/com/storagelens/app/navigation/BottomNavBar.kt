@@ -53,7 +53,7 @@ fun StorageLensBottomNavBar(
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Screen.items.forEach { screen ->
+            Screen.items.filterNotNull().forEach { screen ->
                 val isSelected = currentRoute == screen.route
 
                 val iconColor by animateColorAsState(

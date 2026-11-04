@@ -102,10 +102,16 @@ class DefaultAppContainer(private val application: Application) : AppContainer {
 }
 
 class StorageLensApplication : Application() {
-    lateinit var container: AppContainer
+    val container: AppContainer by lazy {
+        DefaultAppContainer(this)
+    }
 
     override fun onCreate() {
         super.onCreate()
-        container = DefaultAppContainer(this)
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            android.util.Log.e("StorageLens", "FATAL EXCEPTION in thread ${thread.name}: ${throwable.message}", throwable)
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
     }
 }

@@ -1,7 +1,7 @@
 package com.storagelens.app
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -13,25 +13,21 @@ import com.storagelens.app.data.preferences.ThemeMode
 import com.storagelens.app.navigation.StorageLensApp
 import com.storagelens.app.ui.theme.StorageLensTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         try {
             WindowCompat.setDecorFitsSystemWindows(window, false)
         } catch (t: Throwable) {
-            // Guard against vendor-specific window reflection bugs on ColorOS / Oplus
+            // Guard against vendor-specific reflection issues on ColorOS / Oplus
         }
 
-        val app = application as? StorageLensApplication
-            ?: (applicationContext as? StorageLensApplication)
-            ?: run {
-                val fallback = StorageLensApplication()
-                fallback.container = DefaultAppContainer(fallback)
-                fallback
-            }
+        val container = (application as? StorageLensApplication)?.container
+            ?: (applicationContext as? StorageLensApplication)?.container
+            ?: DefaultAppContainer(application)
 
-        val preferencesRepository = app.container.preferencesRepository
+        val preferencesRepository = container.preferencesRepository
 
         setContent {
             val themeMode by preferencesRepository.themeMode.collectAsState(initial = ThemeMode.DARK)
@@ -41,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = StorageLensTheme.colors.background
                 ) {
-                    StorageLensApp()
+                    StorageLensApp(container = container)
                 }
             }
         }

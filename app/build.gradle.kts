@@ -29,7 +29,7 @@ android {
             )
         }
         debug {
-            applicationIdSuffix = ".debug"
+            // Consistent package id across debug and release
         }
     }
 

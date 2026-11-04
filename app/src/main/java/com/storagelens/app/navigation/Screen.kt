@@ -19,35 +19,35 @@ sealed class Screen(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    object Overview : Screen(
+    data object Overview : Screen(
         route = "overview",
         title = "Overview",
         selectedIcon = Icons.Filled.Home,
         unselectedIcon = Icons.Outlined.Home
     )
 
-    object Explore : Screen(
+    data object Explore : Screen(
         route = "explore",
         title = "Explore",
         selectedIcon = Icons.Filled.Folder,
         unselectedIcon = Icons.Outlined.Folder
     )
 
-    object LargeFiles : Screen(
+    data object LargeFiles : Screen(
         route = "large_files",
         title = "Large Files",
         selectedIcon = Icons.Filled.Whatshot,
         unselectedIcon = Icons.Outlined.Whatshot
     )
 
-    object Insights : Screen(
+    data object Insights : Screen(
         route = "insights",
         title = "Insights",
         selectedIcon = Icons.Filled.Analytics,
         unselectedIcon = Icons.Outlined.Analytics
     )
 
-    object Settings : Screen(
+    data object Settings : Screen(
         route = "settings",
         title = "Settings",
         selectedIcon = Icons.Filled.Settings,
@@ -55,6 +55,7 @@ sealed class Screen(
     )
 
     companion object {
-        val items = listOf(Overview, Explore, LargeFiles, Insights, Settings)
+        val items: List<Screen>
+            get() = listOf(Overview, Explore, LargeFiles, Insights, Settings)
     }
 }

@@ -1,0 +1,185 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.storagelens.app"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="29"
+9        android:targetSdkVersion="34" />
+10
+11    <!-- Scoped storage compliant permissions -->
+12    <!-- Android 10-12 (API 29-32) -->
+13    <uses-permission
+13-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:7:5-9:38
+14        android:name="android.permission.READ_EXTERNAL_STORAGE"
+14-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:8:9-64
+15        android:maxSdkVersion="32" />
+15-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:9:9-35
+16
+17    <!-- Android 13+ (API 33+) granular media permissions -->
+18    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+18-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:12:5-76
+18-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:12:22-73
+19    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+19-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:13:5-75
+19-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:13:22-72
+20    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+20-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:14:5-75
+20-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:14:22-72
+21
+22    <permission
+22-->[androidx.core:core:1.12.0] /Users/rehaanbritto/.gradle/caches/transforms-3/5ec00c4fb0e8e68829108255c8aaf5e7/transformed/core-1.12.0/AndroidManifest.xml:22:5-24:47
+23        android:name="com.storagelens.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+23-->[androidx.core:core:1.12.0] /Users/rehaanbritto/.gradle/caches/transforms-3/5ec00c4fb0e8e68829108255c8aaf5e7/transformed/core-1.12.0/AndroidManifest.xml:23:9-81
+24        android:protectionLevel="signature" />
+24-->[androidx.core:core:1.12.0] /Users/rehaanbritto/.gradle/caches/transforms-3/5ec00c4fb0e8e68829108255c8aaf5e7/transformed/core-1.12.0/AndroidManifest.xml:24:9-44
+25
+26    <uses-permission android:name="com.storagelens.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+26-->[androidx.core:core:1.12.0] /Users/rehaanbritto/.gradle/caches/transforms-3/5ec00c4fb0e8e68829108255c8aaf5e7/transformed/core-1.12.0/AndroidManifest.xml:26:5-97
+26-->[androidx.core:core:1.12.0] /Users/rehaanbritto/.gradle/caches/transforms-3/5ec00c4fb0e8e68829108255c8aaf5e7/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
+27
+28    <application
+28-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:16:5-49:19
+29        android:name="com.storagelens.app.StorageLensApplication"
+29-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:17:9-47
+30        android:allowBackup="true"
+30-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:18:9-35
+31        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+31-->[androidx.core:core:1.12.0] /Users/rehaanbritto/.gradle/caches/transforms-3/5ec00c4fb0e8e68829108255c8aaf5e7/transformed/core-1.12.0/AndroidManifest.xml:28:18-86
+32        android:dataExtractionRules="@xml/data_extraction_rules"
+32-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:19:9-65
+33        android:debuggable="true"
+34        android:extractNativeLibs="false"
+35        android:fullBackupContent="@xml/backup_rules"
+35-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:20:9-54
+36        android:icon="@mipmap/ic_launcher"
+36-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:21:9-43
+37        android:label="@string/app_name"
+37-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:22:9-41
+38        android:roundIcon="@mipmap/ic_launcher_round"
+38-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:23:9-54
+39        android:supportsRtl="true"
+39-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:24:9-35
+40        android:theme="@style/Theme.StorageLens" >
+40-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:25:9-49
+41        <activity
+41-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:28:9-37:20
+42            android:name="com.storagelens.app.MainActivity"
+42-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:29:13-41
+43            android:exported="true"
+43-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:30:13-36
+44            android:theme="@style/Theme.StorageLens"
+44-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:31:13-53
+45            android:windowSoftInputMode="adjustResize" >
+45-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:32:13-55
+46            <intent-filter>
+46-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:33:13-36:29
+47                <action android:name="android.intent.action.MAIN" />
+47-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:34:17-69
+47-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:34:25-66
+48
+49                <category android:name="android.intent.category.LAUNCHER" />
+49-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:35:17-77
+49-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:35:27-74
+50            </intent-filter>
+51        </activity>
+52
+53        <provider
+54            android:name="androidx.core.content.FileProvider"
+54-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:40:13-62
+55            android:authorities="com.storagelens.app.fileprovider"
+55-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:41:13-64
+56            android:exported="false"
+56-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:42:13-37
+57            android:grantUriPermissions="true" >
+57-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:43:13-47
+58            <meta-data
+58-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:44:13-46:54
+59                android:name="android.support.FILE_PROVIDER_PATHS"
+59-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:45:17-67
+60                android:resource="@xml/file_paths" />
+60-->/Users/rehaanbritto/.gemini/antigravity/scratch/StorageLens/app/src/main/AndroidManifest.xml:46:17-51
+61        </provider>
+62
+63        <activity
+63-->[androidx.compose.ui:ui-test-manifest:1.6.6] /Users/rehaanbritto/.gradle/caches/transforms-3/eb7da1f78b19a5833c76afc009899002/transformed/ui-test-manifest-1.6.6/AndroidManifest.xml:23:9-25:39
+64            android:name="androidx.activity.ComponentActivity"
+64-->[androidx.compose.ui:ui-test-manifest:1.6.6] /Users/rehaanbritto/.gradle/caches/transforms-3/eb7da1f78b19a5833c76afc009899002/transformed/ui-test-manifest-1.6.6/AndroidManifest.xml:24:13-63
+65            android:exported="true" />
+65-->[androidx.compose.ui:ui-test-manifest:1.6.6] /Users/rehaanbritto/.gradle/caches/transforms-3/eb7da1f78b19a5833c76afc009899002/transformed/ui-test-manifest-1.6.6/AndroidManifest.xml:25:13-36
+66        <activity
+66-->[androidx.compose.ui:ui-tooling-android:1.6.6] /Users/rehaanbritto/.gradle/caches/transforms-3/727fb4fcbfe8e32dceb15dbc1386f558/transformed/ui-tooling-release/AndroidManifest.xml:23:9-25:39
+67            android:name="androidx.compose.ui.tooling.PreviewActivity"
+67-->[androidx.compose.ui:ui-tooling-android:1.6.6] /Users/rehaanbritto/.gradle/caches/transforms-3/727fb4fcbfe8e32dceb15dbc1386f558/transformed/ui-tooling-release/AndroidManifest.xml:24:13-71
+68            android:exported="true" />
+68-->[androidx.compose.ui:ui-tooling-android:1.6.6] /Users/rehaanbritto/.gradle/caches/transforms-3/727fb4fcbfe8e32dceb15dbc1386f558/transformed/ui-tooling-release/AndroidManifest.xml:25:13-36
+69
+70        <provider
+70-->[androidx.emoji2:emoji2:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/9b70a44c3b22155f62054b32dd3df62e/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
+71            android:name="androidx.startup.InitializationProvider"
+71-->[androidx.emoji2:emoji2:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/9b70a44c3b22155f62054b32dd3df62e/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
+72            android:authorities="com.storagelens.app.androidx-startup"
+72-->[androidx.emoji2:emoji2:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/9b70a44c3b22155f62054b32dd3df62e/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
+73            android:exported="false" >
+73-->[androidx.emoji2:emoji2:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/9b70a44c3b22155f62054b32dd3df62e/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
+74            <meta-data
+74-->[androidx.emoji2:emoji2:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/9b70a44c3b22155f62054b32dd3df62e/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+75                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+75-->[androidx.emoji2:emoji2:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/9b70a44c3b22155f62054b32dd3df62e/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
+76                android:value="androidx.startup" />
+76-->[androidx.emoji2:emoji2:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/9b70a44c3b22155f62054b32dd3df62e/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
+77            <meta-data
+77-->[androidx.lifecycle:lifecycle-process:2.7.0] /Users/rehaanbritto/.gradle/caches/transforms-3/e7960207eaa95795954f5e1c3e0d995f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:29:13-31:52
+78                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+78-->[androidx.lifecycle:lifecycle-process:2.7.0] /Users/rehaanbritto/.gradle/caches/transforms-3/e7960207eaa95795954f5e1c3e0d995f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:30:17-78
+79                android:value="androidx.startup" />
+79-->[androidx.lifecycle:lifecycle-process:2.7.0] /Users/rehaanbritto/.gradle/caches/transforms-3/e7960207eaa95795954f5e1c3e0d995f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:31:17-49
+80            <meta-data
+80-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:29:13-31:52
+81                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+81-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:30:17-85
+82                android:value="androidx.startup" />
+82-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:31:17-49
+83        </provider>
+84
+85        <receiver
+85-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:34:9-52:20
+86            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+86-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:35:13-76
+87            android:directBootAware="false"
+87-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:36:13-44
+88            android:enabled="true"
+88-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:37:13-35
+89            android:exported="true"
+89-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:38:13-36
+90            android:permission="android.permission.DUMP" >
+90-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:39:13-57
+91            <intent-filter>
+91-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:40:13-42:29
+92                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+92-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:17-91
+92-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:25-88
+93            </intent-filter>
+94            <intent-filter>
+94-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:43:13-45:29
+95                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+95-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:17-85
+95-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:25-82
+96            </intent-filter>
+97            <intent-filter>
+97-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:46:13-48:29
+98                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+98-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:17-88
+98-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:25-85
+99            </intent-filter>
+100            <intent-filter>
+100-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:49:13-51:29
+101                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+101-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:17-95
+101-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/rehaanbritto/.gradle/caches/transforms-3/7017065f8bb5118e3da927edc9fa9a12/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:25-92
+102            </intent-filter>
+103        </receiver>
+104    </application>
+105
+106</manifest>
