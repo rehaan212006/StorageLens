@@ -3,20 +3,25 @@ package com.storagelens.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
 import com.storagelens.app.data.preferences.ThemeMode
 import com.storagelens.app.navigation.StorageLensApp
 import com.storagelens.app.ui.theme.StorageLensTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        try {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+        } catch (t: Throwable) {
+            // Guard against vendor-specific window reflection bugs on ColorOS / Oplus
+        }
 
         val app = application as? StorageLensApplication
             ?: (applicationContext as? StorageLensApplication)

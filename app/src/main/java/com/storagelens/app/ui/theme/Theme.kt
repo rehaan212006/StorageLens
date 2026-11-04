@@ -118,9 +118,13 @@ fun StorageLensTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
-                val insetsController = WindowCompat.getInsetsController(window, view)
-                insetsController.isAppearanceLightStatusBars = !isDark
-                insetsController.isAppearanceLightNavigationBars = !isDark
+                try {
+                    val insetsController = WindowCompat.getInsetsController(window, view)
+                    insetsController.isAppearanceLightStatusBars = !isDark
+                    insetsController.isAppearanceLightNavigationBars = !isDark
+                } catch (t: Throwable) {
+                    // Safe guard against OEM reflection issues
+                }
             }
         }
     }

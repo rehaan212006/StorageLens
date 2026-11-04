@@ -18,23 +18,31 @@ class DeviceStorageDataSource(private val context: Context) {
 
     suspend fun getDeviceStorageStats(): StorageStats = withContext(Dispatchers.IO) {
         try {
+            var totalBytes = 0L
+            var freeBytes = 0L
+
             // Using primary external storage directory (shared device storage)
-            val path: File = Environment.getExternalStorageDirectory()
-            val statFs = StatFs(path.path)
-
-            val blockSize = statFs.blockSizeLong
-            val totalBlocks = statFs.blockCountLong
-            val availableBlocks = statFs.availableBlocksLong
-
-            var totalBytes = totalBlocks * blockSize
-            var freeBytes = availableBlocks * blockSize
+            val path: File? = try { Environment.getExternalStorageDirectory() } catch (t: Throwable) { null }
+            if (path != null && path.exists()) {
+                try {
+                    val statFs = StatFs(path.path)
+                    val blockSize = statFs.blockSizeLong
+                    totalBytes = statFs.blockCountLong * blockSize
+                    freeBytes = statFs.availableBlocksLong * blockSize
+                } catch (t: Throwable) {
+                    // Fall back to internal data directory
+                }
+            }
 
             // Also check internal data directory if external report seems zero
             if (totalBytes <= 0L) {
-                val dataPath = Environment.getDataDirectory()
-                val dataStat = StatFs(dataPath.path)
-                totalBytes = dataStat.blockCountLong * dataStat.blockSizeLong
-                freeBytes = dataStat.availableBlocksLong * dataStat.blockSizeLong
+                try {
+                    val dataPath = Environment.getDataDirectory()
+                    val dataStat = StatFs(dataPath.path)
+                    val blockSize = dataStat.blockSizeLong
+                    totalBytes = dataStat.blockCountLong * blockSize
+                    freeBytes = dataStat.availableBlocksLong * blockSize
+                } catch (t: Throwable) {}
             }
 
             val usedBytes = (totalBytes - freeBytes).coerceAtLeast(0L)
@@ -46,7 +54,7 @@ class DeviceStorageDataSource(private val context: Context) {
                 isAvailable = totalBytes > 0L,
                 lastScanTimestamp = System.currentTimeMillis()
             )
-        } catch (e: Exception) {
+        } catch (t: Throwable) {
             StorageStats(isAvailable = false)
         }
     }

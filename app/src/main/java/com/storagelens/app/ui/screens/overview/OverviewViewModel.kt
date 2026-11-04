@@ -27,7 +27,11 @@ class OverviewViewModel(
 
     fun loadInitialStats() {
         viewModelScope.launch {
-            getDeviceStorageUseCase()
+            try {
+                getDeviceStorageUseCase()
+            } catch (t: Throwable) {
+                // Defensive guard against OEM storage exceptions
+            }
         }
     }
 
