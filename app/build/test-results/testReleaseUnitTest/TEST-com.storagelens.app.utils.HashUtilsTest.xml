@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.storagelens.app.utils.HashUtilsTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-04T15:39:40" hostname="Rehaans-MacBook-Air.local" time="0.024">
-  <properties/>
-  <testcase name="testKnownSha256Hash" classname="com.storagelens.app.utils.HashUtilsTest" time="0.023"/>
-  <testcase name="testEmptySha256Hash" classname="com.storagelens.app.utils.HashUtilsTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
