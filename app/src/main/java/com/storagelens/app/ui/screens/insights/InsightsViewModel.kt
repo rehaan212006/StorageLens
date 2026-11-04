@@ -34,8 +34,34 @@ class InsightsViewModel(
     private val _pendingDeleteFile = MutableStateFlow<FileItem?>(null)
     val pendingDeleteFile: StateFlow<FileItem?> = _pendingDeleteFile.asStateFlow()
 
+    val scanState: StateFlow<com.storagelens.app.data.models.ScanState> = storageRepository.scanState
+
     init {
         refresh()
+        viewModelScope.launch {
+            storageRepository.scannedFiles.collect {
+                refresh()
+            }
+        }
+        viewModelScope.launch {
+            storageRepository.duplicates.collect {
+                refresh()
+            }
+        }
+        viewModelScope.launch {
+            storageRepository.topFolders.collect {
+                refresh()
+            }
+        }
+        viewModelScope.launch {
+            storageRepository.scanState.collect {
+                refresh()
+            }
+        }
+    }
+
+    fun triggerScan() {
+        storageRepository.startScan(viewModelScope, scanDuplicates = true)
     }
 
     fun refresh() {

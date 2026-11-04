@@ -128,6 +128,7 @@ fun StorageLensApp(container: AppContainer) {
                     factory = LargeFilesViewModel.provideFactory(
                         container.getLargeFilesUseCase,
                         container.deleteFileUseCase,
+                        container.storageRepository,
                         container.deletionManager
                     )
                 )

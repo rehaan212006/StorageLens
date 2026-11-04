@@ -37,7 +37,8 @@ class MediaStoreDataSource(private val context: Context) {
             MediaStore.Files.FileColumns.SIZE,
             MediaStore.Files.FileColumns.MIME_TYPE,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
-            MediaStore.Files.FileColumns.DATA
+            MediaStore.Files.FileColumns.DATA,
+            MediaStore.Files.FileColumns.MEDIA_TYPE
         )
 
         // Only query files with size > 0 and exclude directories in MediaStore query
@@ -54,6 +55,7 @@ class MediaStoreDataSource(private val context: Context) {
                 val mimeCol = cursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE)
                 val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
                 val dataCol = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA)
+                val mediaTypeCol = cursor.getColumnIndex(MediaStore.Files.FileColumns.MEDIA_TYPE)
 
                 var count = 0
                 while (cursor.moveToNext()) {
@@ -65,8 +67,15 @@ class MediaStoreDataSource(private val context: Context) {
                     val mime = if (mimeCol != -1) cursor.getString(mimeCol) ?: "" else ""
                     val dateModified = cursor.getLong(dateCol)
                     val path = if (dataCol != -1) cursor.getString(dataCol) ?: "" else ""
+                    val mediaType = if (mediaTypeCol != -1) cursor.getInt(mediaTypeCol) else -1
 
-                    val fileUri = ContentUris.withAppendedId(collectionUri, id)
+                    val specificUri = when (mediaType) {
+                        MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                        MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                        MediaStore.Files.FileColumns.MEDIA_TYPE_AUDIO -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                        else -> collectionUri
+                    }
+                    val fileUri = ContentUris.withAppendedId(specificUri, id)
                     val category = MimeUtils.resolveCategory(mime, path.ifEmpty { name })
                     val extension = MimeUtils.getExtension(name)
 

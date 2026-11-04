@@ -1,6 +1,8 @@
 package com.storagelens.app.scanner
 
+import android.content.ContentUris
 import android.content.Context
+import android.provider.MediaStore
 import com.storagelens.app.data.models.DuplicateGroup
 import com.storagelens.app.data.models.FileItem
 import com.storagelens.app.utils.HashUtils
@@ -72,22 +74,45 @@ class DuplicateDetector(private val context: Context) {
     }
 
     private suspend fun calculateHashForFileItem(fileItem: FileItem): String? {
-        // Try file path first
+        // 1. Try direct file path if accessible
         if (fileItem.path.isNotEmpty()) {
-            val file = File(fileItem.path)
-            if (file.exists() && file.canRead()) {
-                val hash = HashUtils.calculateSha256(file)
+            try {
+                val file = File(fileItem.path)
+                if (file.exists() && file.canRead()) {
+                    val hash = HashUtils.calculateSha256(file)
+                    if (hash != null) return hash
+                }
+            } catch (ignored: Exception) {}
+        }
+
+        // 2. Try direct ContentResolver URI
+        try {
+            context.contentResolver.openInputStream(fileItem.uri)?.use { stream ->
+                val hash = HashUtils.calculateSha256(stream)
                 if (hash != null) return hash
+            }
+        } catch (ignored: Exception) {}
+
+        // 3. Fallback: query specific media type URIs for Scoped Storage compatibility
+        val idLong = fileItem.id.toLongOrNull()
+        if (idLong != null) {
+            val candidates = listOf(
+                ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, idLong),
+                ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, idLong),
+                ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, idLong),
+                ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), idLong)
+            )
+            for (uri in candidates) {
+                if (uri == fileItem.uri) continue
+                try {
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        val hash = HashUtils.calculateSha256(stream)
+                        if (hash != null) return hash
+                    }
+                } catch (ignored: Exception) {}
             }
         }
 
-        // Fall back to ContentResolver input stream for MediaStore Uri
-        return try {
-            context.contentResolver.openInputStream(fileItem.uri)?.use { stream ->
-                HashUtils.calculateSha256(stream)
-            }
-        } catch (e: Exception) {
-            null
-        }
+        return null
     }
 }

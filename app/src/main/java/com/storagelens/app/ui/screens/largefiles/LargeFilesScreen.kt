@@ -74,6 +74,7 @@ fun LargeFilesScreen(
     val sortOrder by viewModel.sortOrder.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val pendingDeleteFile by viewModel.pendingDeleteFile.collectAsState()
+    val scanState by viewModel.scanState.collectAsState()
 
     var sortMenuExpanded by remember { mutableStateOf(false) }
 
@@ -215,12 +216,18 @@ fun LargeFilesScreen(
 
         // Large Files List
         if (largeFiles.isEmpty()) {
+            val isScanning = scanState is com.storagelens.app.data.models.ScanState.Scanning
+            val hasScanned = scanState is com.storagelens.app.data.models.ScanState.Completed
             EmptyStateView(
                 icon = Icons.Default.Whatshot,
-                title = "No Large Files Found",
-                description = "No files match the ${selectedFilter.label} threshold. Run a storage scan to discover large media.",
-                actionLabel = "Scan Storage",
-                onAction = onNavigateToScan,
+                title = if (!hasScanned && !isScanning) "Storage Not Yet Scanned" else "No Large Files Found",
+                description = if (!hasScanned && !isScanning) {
+                    "Run a storage scan to discover large media and files taking up device space."
+                } else {
+                    "No files exceed the ${selectedFilter.label} threshold."
+                },
+                actionLabel = if (!hasScanned && !isScanning) "Scan Storage" else null,
+                onAction = if (!hasScanned && !isScanning) { { viewModel.triggerScan() } } else null,
                 modifier = Modifier.weight(1f)
             )
         } else {

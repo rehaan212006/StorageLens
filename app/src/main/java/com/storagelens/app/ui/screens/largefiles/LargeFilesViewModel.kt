@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.storagelens.app.data.models.DeleteResult
 import com.storagelens.app.data.models.FileItem
 import com.storagelens.app.data.models.LargeFileFilter
+import com.storagelens.app.data.models.ScanState
 import com.storagelens.app.data.models.SortOrder
 import com.storagelens.app.data.models.StorageCategory
+import com.storagelens.app.data.repository.StorageRepository
 import com.storagelens.app.domain.usecases.DeleteFileUseCase
 import com.storagelens.app.domain.usecases.GetLargeFilesUseCase
 import com.storagelens.app.utils.DeletionManager
@@ -19,6 +21,7 @@ import kotlinx.coroutines.launch
 class LargeFilesViewModel(
     private val getLargeFilesUseCase: GetLargeFilesUseCase,
     private val deleteFileUseCase: DeleteFileUseCase,
+    private val storageRepository: StorageRepository,
     private val deletionManager: DeletionManager
 ) : ViewModel() {
 
@@ -37,8 +40,24 @@ class LargeFilesViewModel(
     private val _pendingDeleteFile = MutableStateFlow<FileItem?>(null)
     val pendingDeleteFile: StateFlow<FileItem?> = _pendingDeleteFile.asStateFlow()
 
+    val scanState: StateFlow<ScanState> = storageRepository.scanState
+
     init {
         refresh()
+        viewModelScope.launch {
+            storageRepository.scannedFiles.collect {
+                refresh()
+            }
+        }
+        viewModelScope.launch {
+            storageRepository.scanState.collect {
+                refresh()
+            }
+        }
+    }
+
+    fun triggerScan() {
+        storageRepository.startScan(viewModelScope, scanDuplicates = true)
     }
 
     fun refresh() {
@@ -103,11 +122,17 @@ class LargeFilesViewModel(
         fun provideFactory(
             getLargeFilesUseCase: GetLargeFilesUseCase,
             deleteFileUseCase: DeleteFileUseCase,
+            storageRepository: StorageRepository,
             deletionManager: DeletionManager
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return LargeFilesViewModel(getLargeFilesUseCase, deleteFileUseCase, deletionManager) as T
+                return LargeFilesViewModel(
+                    getLargeFilesUseCase,
+                    deleteFileUseCase,
+                    storageRepository,
+                    deletionManager
+                ) as T
             }
         }
     }
