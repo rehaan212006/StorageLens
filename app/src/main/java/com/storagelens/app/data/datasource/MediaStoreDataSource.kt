@@ -37,6 +37,7 @@ class MediaStoreDataSource(private val context: Context) {
             MediaStore.Files.FileColumns.SIZE,
             MediaStore.Files.FileColumns.MIME_TYPE,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
+            MediaStore.Files.FileColumns.DATE_ADDED,
             MediaStore.Files.FileColumns.DATA,
             MediaStore.Files.FileColumns.MEDIA_TYPE
         )
@@ -54,6 +55,7 @@ class MediaStoreDataSource(private val context: Context) {
                 val sizeCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
                 val mimeCol = cursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE)
                 val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
+                val dateAddedCol = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATE_ADDED)
                 val dataCol = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA)
                 val mediaTypeCol = cursor.getColumnIndex(MediaStore.Files.FileColumns.MEDIA_TYPE)
 
@@ -66,7 +68,20 @@ class MediaStoreDataSource(private val context: Context) {
 
                     val name = if (nameCol != -1) cursor.getString(nameCol) ?: "file_$id" else "file_$id"
                     val mime = if (mimeCol != -1) cursor.getString(mimeCol) ?: "" else ""
-                    val dateModified = cursor.getLong(dateCol)
+                    val dateModifiedSec = cursor.getLong(dateCol)
+                    val dateAddedSec = if (dateAddedCol != -1) cursor.getLong(dateAddedCol) else 0L
+
+                    // Handle DOS epoch (1980) or Unix epoch (1970) dummy dates from zip extractions
+                    val validModified = if (dateModifiedSec > 946_684_800L) dateModifiedSec else 0L
+                    val validAdded = if (dateAddedSec > 946_684_800L) dateAddedSec else 0L
+                    val bestDateSec = when {
+                        validModified > 0L && validAdded > 0L -> maxOf(validModified, validAdded)
+                        validModified > 0L -> validModified
+                        validAdded > 0L -> validAdded
+                        else -> System.currentTimeMillis() / 1000L
+                    }
+                    val dateModifiedMs = bestDateSec * 1000L
+
                     val path = if (dataCol != -1) cursor.getString(dataCol) ?: "" else ""
                     val mediaType = if (mediaTypeCol != -1) cursor.getInt(mediaTypeCol) else -1
 
@@ -95,7 +110,7 @@ class MediaStoreDataSource(private val context: Context) {
                         sizeBytes = size,
                         mimeType = mime.ifEmpty { MimeUtils.getMimeType(name) },
                         extension = extension,
-                        lastModified = dateModified,
+                        lastModified = dateModifiedMs,
                         isDirectory = false,
                         category = category
                     )

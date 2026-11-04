@@ -1,6 +1,7 @@
 package com.storagelens.app.data.datasource
 
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import com.storagelens.app.data.models.FileItem
 import com.storagelens.app.data.models.FolderItem
@@ -63,7 +64,7 @@ class FileSystemDataSource {
                         sizeBytes = stats.first,
                         fileCount = stats.second,
                         subfolderCount = stats.third,
-                        lastModified = child.lastModified(),
+                        lastModified = getEffectiveFileTimestamp(child),
                         isAccessible = child.canRead()
                     )
                 )
@@ -80,7 +81,7 @@ class FileSystemDataSource {
                         sizeBytes = size,
                         mimeType = mime,
                         extension = MimeUtils.getExtension(child.name),
-                        lastModified = child.lastModified(),
+                        lastModified = getEffectiveFileTimestamp(child),
                         isDirectory = false,
                         category = cat
                     )
@@ -128,7 +129,7 @@ class FileSystemDataSource {
                         sizeBytes = stats.first,
                         fileCount = stats.second,
                         subfolderCount = stats.third,
-                        lastModified = child.lastModified(),
+                        lastModified = getEffectiveFileTimestamp(child),
                         isAccessible = child.canRead()
                     )
                 )
@@ -146,7 +147,7 @@ class FileSystemDataSource {
                             sizeBytes = size,
                             mimeType = mime,
                             extension = MimeUtils.getExtension(child.name),
-                            lastModified = child.lastModified(),
+                            lastModified = getEffectiveFileTimestamp(child),
                             isDirectory = false,
                             category = cat
                         )
@@ -208,7 +209,7 @@ class FileSystemDataSource {
                                 sizeBytes = size,
                                 mimeType = mime,
                                 extension = MimeUtils.getExtension(child.name),
-                                lastModified = child.lastModified(),
+                                lastModified = getEffectiveFileTimestamp(child),
                                 isDirectory = false,
                                 category = cat
                             )
@@ -266,5 +267,33 @@ class FileSystemDataSource {
         } catch (e: Exception) {
             false
         }
+    }
+
+    /**
+     * Resolves an accurate, valid timestamp for a file, correcting for DOS epoch (Jan 1, 1980)
+     * and Unix epoch (Jan 1, 1970) timestamps common in unzipped archives and assets.
+     */
+    private fun getEffectiveFileTimestamp(file: File): Long {
+        val lm = file.lastModified()
+        if (lm >= 946_684_800_000L) {
+            return lm
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                val attrs = java.nio.file.Files.readAttributes(
+                    file.toPath(),
+                    java.nio.file.attribute.BasicFileAttributes::class.java
+                )
+                val cTime = attrs.creationTime().toMillis()
+                if (cTime >= 946_684_800_000L) {
+                    return cTime
+                }
+            } catch (ignored: Exception) {}
+        }
+        val parentLm = file.parentFile?.lastModified() ?: 0L
+        if (parentLm >= 946_684_800_000L) {
+            return parentLm
+        }
+        return System.currentTimeMillis()
     }
 }

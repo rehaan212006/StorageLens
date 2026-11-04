@@ -17,8 +17,16 @@ object DateFormatter {
         // If timestamp is in seconds instead of ms (common in MediaStore)
         val ms = if (timestampMs < 10_000_000_000L) timestampMs * 1000L else timestampMs
 
+        // Guard against dummy DOS/Unix epoch timestamps (e.g. 1980 or 1970)
+        if (ms < 946_684_800_000L) {
+            return "Recently added"
+        }
+
         val now = System.currentTimeMillis()
         val diff = now - ms
+        if (diff < 0L) {
+            return "Just now"
+        }
 
         return when {
             diff < 60_000L -> "Just now"
@@ -33,6 +41,9 @@ object DateFormatter {
     fun formatDetailed(timestampMs: Long): String {
         if (timestampMs <= 0L) return "Unknown"
         val ms = if (timestampMs < 10_000_000_000L) timestampMs * 1000L else timestampMs
+        if (ms < 946_684_800_000L) {
+            return "Recently added"
+        }
         return detailedDateFormat.format(Date(ms))
     }
 }

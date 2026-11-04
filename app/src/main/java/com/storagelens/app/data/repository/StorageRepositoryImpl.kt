@@ -113,10 +113,12 @@ class StorageRepositoryImpl(
     override fun getStaleFiles(thresholdDays: Int): List<FileItem> {
         val now = System.currentTimeMillis()
         val thresholdMs = thresholdDays * 24L * 3600L * 1000L
+        val minValidTimestamp = 946_684_800_000L // Jan 1, 2000 in ms
         return storageScanner.scannedFiles.value
             .filter { item ->
                 val itemMs = if (item.lastModified < 10_000_000_000L) item.lastModified * 1000L else item.lastModified
-                itemMs > 0 && (now - itemMs) >= thresholdMs
+                // Only consider genuine files modified after year 2000 and older than the threshold
+                itemMs >= minValidTimestamp && itemMs <= now && (now - itemMs) >= thresholdMs
             }
             .sortedByDescending { it.sizeBytes }
     }
