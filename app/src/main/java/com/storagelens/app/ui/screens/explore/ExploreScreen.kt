@@ -72,24 +72,8 @@ fun ExploreScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val pendingDeleteFile by viewModel.pendingDeleteFile.collectAsState()
-    val pendingIntentSender by viewModel.pendingDeleteIntentSender.collectAsState()
 
     var sortMenuExpanded by remember { mutableStateOf(false) }
-
-    // Scoped Storage deletion permission launcher (Android 10 & 11+)
-    val deletePermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        viewModel.onPermissionResult(result.resultCode == Activity.RESULT_OK)
-    }
-
-    LaunchedEffect(pendingIntentSender) {
-        pendingIntentSender?.let { sender ->
-            deletePermissionLauncher.launch(
-                IntentSenderRequest.Builder(sender).build()
-            )
-        }
-    }
 
     // SAF Tree Picker Launcher
     val safLauncher = rememberLauncherForActivityResult(

@@ -1,6 +1,5 @@
 package com.storagelens.app.ui.screens.largefiles
 
-import android.content.IntentSender
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,6 +10,7 @@ import com.storagelens.app.data.models.SortOrder
 import com.storagelens.app.data.models.StorageCategory
 import com.storagelens.app.domain.usecases.DeleteFileUseCase
 import com.storagelens.app.domain.usecases.GetLargeFilesUseCase
+import com.storagelens.app.utils.DeletionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +18,8 @@ import kotlinx.coroutines.launch
 
 class LargeFilesViewModel(
     private val getLargeFilesUseCase: GetLargeFilesUseCase,
-    private val deleteFileUseCase: DeleteFileUseCase
+    private val deleteFileUseCase: DeleteFileUseCase,
+    private val deletionManager: DeletionManager
 ) : ViewModel() {
 
     private val _selectedFilter = MutableStateFlow(LargeFileFilter.ABOVE_100MB)
@@ -35,11 +36,6 @@ class LargeFilesViewModel(
 
     private val _pendingDeleteFile = MutableStateFlow<FileItem?>(null)
     val pendingDeleteFile: StateFlow<FileItem?> = _pendingDeleteFile.asStateFlow()
-
-    private val _pendingDeleteIntentSender = MutableStateFlow<IntentSender?>(null)
-    val pendingDeleteIntentSender: StateFlow<IntentSender?> = _pendingDeleteIntentSender.asStateFlow()
-
-    private var fileAwaitingPermission: FileItem? = null
 
     init {
         refresh()
@@ -87,25 +83,18 @@ class LargeFilesViewModel(
                     refresh()
                 }
                 is DeleteResult.RequiresPermission -> {
-                    fileAwaitingPermission = file
-                    _pendingDeleteIntentSender.value = result.intentSender
+                    deletionManager.requestDeletion(result.intentSender) { granted ->
+                        if (granted) {
+                            viewModelScope.launch {
+                                deleteFileUseCase.notifyFileDeleted(file.id)
+                                refresh()
+                            }
+                        }
+                    }
                 }
                 is DeleteResult.Failure -> {
-                    // Refresh in case partially changed
                     refresh()
                 }
-            }
-        }
-    }
-
-    fun onPermissionResult(granted: Boolean) {
-        _pendingDeleteIntentSender.value = null
-        val file = fileAwaitingPermission
-        fileAwaitingPermission = null
-        if (granted && file != null) {
-            viewModelScope.launch {
-                deleteFileUseCase.notifyFileDeleted(file.id)
-                refresh()
             }
         }
     }
@@ -113,11 +102,12 @@ class LargeFilesViewModel(
     companion object {
         fun provideFactory(
             getLargeFilesUseCase: GetLargeFilesUseCase,
-            deleteFileUseCase: DeleteFileUseCase
+            deleteFileUseCase: DeleteFileUseCase,
+            deletionManager: DeletionManager
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return LargeFilesViewModel(getLargeFilesUseCase, deleteFileUseCase) as T
+                return LargeFilesViewModel(getLargeFilesUseCase, deleteFileUseCase, deletionManager) as T
             }
         }
     }

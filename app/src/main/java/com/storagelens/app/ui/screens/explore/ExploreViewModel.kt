@@ -13,6 +13,7 @@ import com.storagelens.app.data.models.SortOrder
 import com.storagelens.app.data.repository.StorageRepository
 import com.storagelens.app.domain.usecases.DeleteFileUseCase
 import com.storagelens.app.ui.components.BreadcrumbItem
+import com.storagelens.app.utils.DeletionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +22,8 @@ import java.io.File
 
 class ExploreViewModel(
     private val storageRepository: StorageRepository,
-    private val deleteFileUseCase: DeleteFileUseCase
+    private val deleteFileUseCase: DeleteFileUseCase,
+    private val deletionManager: DeletionManager
 ) : ViewModel() {
 
     private val rootPath = try {
@@ -55,11 +57,6 @@ class ExploreViewModel(
 
     private val _pendingDeleteFile = MutableStateFlow<FileItem?>(null)
     val pendingDeleteFile: StateFlow<FileItem?> = _pendingDeleteFile.asStateFlow()
-
-    private val _pendingDeleteIntentSender = MutableStateFlow<IntentSender?>(null)
-    val pendingDeleteIntentSender: StateFlow<IntentSender?> = _pendingDeleteIntentSender.asStateFlow()
-
-    private var fileAwaitingPermission: FileItem? = null
 
     init {
         loadDirectory(rootPath)
@@ -126,24 +123,21 @@ class ExploreViewModel(
                     _files.value = _files.value.filter { it.id != file.id }
                 }
                 is DeleteResult.RequiresPermission -> {
-                    fileAwaitingPermission = file
-                    _pendingDeleteIntentSender.value = result.intentSender
+                    // Forward to Activity to trigger IntentSenderRequest
+                    deletionManager.requestDeletion(result.intentSender) { granted ->
+                        if (granted) {
+                            viewModelScope.launch {
+                                deleteFileUseCase.notifyFileDeleted(file.id)
+                                _files.value = _files.value.filter { it.id != file.id }
+                            }
+                        } else {
+                            _errorMessage.value = "Deletion cancelled by user."
+                        }
+                    }
                 }
                 is DeleteResult.Failure -> {
                     _errorMessage.value = result.message ?: "Could not delete file due to Android permission constraints."
                 }
-            }
-        }
-    }
-
-    fun onPermissionResult(granted: Boolean) {
-        _pendingDeleteIntentSender.value = null
-        val file = fileAwaitingPermission
-        fileAwaitingPermission = null
-        if (granted && file != null) {
-            viewModelScope.launch {
-                deleteFileUseCase.notifyFileDeleted(file.id)
-                _files.value = _files.value.filter { it.id != file.id }
             }
         }
     }
@@ -187,11 +181,12 @@ class ExploreViewModel(
     companion object {
         fun provideFactory(
             storageRepository: StorageRepository,
-            deleteFileUseCase: DeleteFileUseCase
+            deleteFileUseCase: DeleteFileUseCase,
+            deletionManager: DeletionManager
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return ExploreViewModel(storageRepository, deleteFileUseCase) as T
+                return ExploreViewModel(storageRepository, deleteFileUseCase, deletionManager) as T
             }
         }
     }

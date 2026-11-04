@@ -1,6 +1,10 @@
 package com.storagelens.app
 
+import android.app.Activity
 import android.os.Bundle
+import android.util.Log
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +18,22 @@ import com.storagelens.app.navigation.StorageLensApp
 import com.storagelens.app.ui.theme.StorageLensTheme
 
 class MainActivity : AppCompatActivity() {
+
+    private val tag = "MainActivity"
+
+    // Holds the callback for the active Scoped Storage deletion request
+    private var pendingDeleteCallback: ((Boolean) -> Unit)? = null
+
+    // Activity catches the result of the IntentSenderRequest for Scoped Storage deletion
+    private val deleteRequestLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        val granted = (result.resultCode == Activity.RESULT_OK)
+        Log.i(tag, "Caught deletion IntentSender result: resultCode=${result.resultCode}, granted=$granted")
+        pendingDeleteCallback?.invoke(granted)
+        pendingDeleteCallback = null
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -26,6 +46,14 @@ class MainActivity : AppCompatActivity() {
         val container = (application as? StorageLensApplication)?.container
             ?: (applicationContext as? StorageLensApplication)?.container
             ?: DefaultAppContainer(application)
+
+        // Register Activity launcher to handle Scoped Storage deletion intents
+        container.deletionManager.registerActivityLauncher { intentSender, callback ->
+            Log.d(tag, "Launching deletion IntentSenderRequest from Activity")
+            pendingDeleteCallback = callback
+            val request = IntentSenderRequest.Builder(intentSender).build()
+            deleteRequestLauncher.launch(request)
+        }
 
         val preferencesRepository = container.preferencesRepository
 
@@ -41,5 +69,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        val container = (application as? StorageLensApplication)?.container
+            ?: (applicationContext as? StorageLensApplication)?.container
+        container?.deletionManager?.unregisterActivityLauncher()
     }
 }

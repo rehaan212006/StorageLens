@@ -115,7 +115,8 @@ fun StorageLensApp(container: AppContainer) {
                 val exploreViewModel: ExploreViewModel = viewModel(
                     factory = ExploreViewModel.provideFactory(
                         container.storageRepository,
-                        container.deleteFileUseCase
+                        container.deleteFileUseCase,
+                        container.deletionManager
                     )
                 )
 
@@ -126,7 +127,8 @@ fun StorageLensApp(container: AppContainer) {
                 val largeFilesViewModel: LargeFilesViewModel = viewModel(
                     factory = LargeFilesViewModel.provideFactory(
                         container.getLargeFilesUseCase,
-                        container.deleteFileUseCase
+                        container.deleteFileUseCase,
+                        container.deletionManager
                     )
                 )
 
@@ -143,7 +145,9 @@ fun StorageLensApp(container: AppContainer) {
                     factory = InsightsViewModel.provideFactory(
                         container.getStorageInsightsUseCase,
                         container.findDuplicatesUseCase,
-                        container.deleteFileUseCase
+                        container.deleteFileUseCase,
+                        container.storageRepository,
+                        container.deletionManager
                     )
                 )
 

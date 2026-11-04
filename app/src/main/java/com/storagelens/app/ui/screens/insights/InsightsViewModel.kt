@@ -1,16 +1,17 @@
 package com.storagelens.app.ui.screens.insights
 
-import android.content.IntentSender
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.storagelens.app.data.models.DeleteResult
 import com.storagelens.app.data.models.DuplicateGroup
 import com.storagelens.app.data.models.FileItem
+import com.storagelens.app.data.repository.StorageRepository
 import com.storagelens.app.domain.usecases.DeleteFileUseCase
 import com.storagelens.app.domain.usecases.FindDuplicatesUseCase
 import com.storagelens.app.domain.usecases.GetStorageInsightsUseCase
 import com.storagelens.app.domain.usecases.StorageInsights
+import com.storagelens.app.utils.DeletionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +20,9 @@ import kotlinx.coroutines.launch
 class InsightsViewModel(
     private val getStorageInsightsUseCase: GetStorageInsightsUseCase,
     private val findDuplicatesUseCase: FindDuplicatesUseCase,
-    private val deleteFileUseCase: DeleteFileUseCase
+    private val deleteFileUseCase: DeleteFileUseCase,
+    private val storageRepository: StorageRepository,
+    private val deletionManager: DeletionManager
 ) : ViewModel() {
 
     private val _insights = MutableStateFlow(StorageInsights())
@@ -30,11 +33,6 @@ class InsightsViewModel(
 
     private val _pendingDeleteFile = MutableStateFlow<FileItem?>(null)
     val pendingDeleteFile: StateFlow<FileItem?> = _pendingDeleteFile.asStateFlow()
-
-    private val _pendingDeleteIntentSender = MutableStateFlow<IntentSender?>(null)
-    val pendingDeleteIntentSender: StateFlow<IntentSender?> = _pendingDeleteIntentSender.asStateFlow()
-
-    private var fileAwaitingPermission: FileItem? = null
 
     init {
         refresh()
@@ -60,9 +58,50 @@ class InsightsViewModel(
     fun confirmDeleteDuplicates() {
         val group = _pendingDeleteGroup.value ?: return
         viewModelScope.launch {
-            findDuplicatesUseCase.deleteSelectedInGroup(group)
             _pendingDeleteGroup.value = null
-            refresh()
+            val selectedFiles = group.files.filter { group.selectedFiles.contains(it.id) }
+            if (selectedFiles.isEmpty()) return@launch
+
+            when (val result = storageRepository.createBatchDeleteRequest(selectedFiles)) {
+                is DeleteResult.Success -> {
+                    for (file in selectedFiles) {
+                        deleteFileUseCase.notifyFileDeleted(file.id)
+                    }
+                    refresh()
+                }
+                is DeleteResult.RequiresPermission -> {
+                    deletionManager.requestDeletion(result.intentSender) { granted ->
+                        if (granted) {
+                            viewModelScope.launch {
+                                for (file in selectedFiles) {
+                                    deleteFileUseCase.notifyFileDeleted(file.id)
+                                }
+                                refresh()
+                            }
+                        }
+                    }
+                }
+                is DeleteResult.Failure -> {
+                    // Fall back to individual deletion
+                    for (file in selectedFiles) {
+                        when (val singleResult = deleteFileUseCase(file)) {
+                            is DeleteResult.Success -> {}
+                            is DeleteResult.RequiresPermission -> {
+                                deletionManager.requestDeletion(singleResult.intentSender) { granted ->
+                                    if (granted) {
+                                        viewModelScope.launch {
+                                            deleteFileUseCase.notifyFileDeleted(file.id)
+                                            refresh()
+                                        }
+                                    }
+                                }
+                            }
+                            is DeleteResult.Failure -> {}
+                        }
+                    }
+                    refresh()
+                }
+            }
         }
     }
 
@@ -83,8 +122,14 @@ class InsightsViewModel(
                     refresh()
                 }
                 is DeleteResult.RequiresPermission -> {
-                    fileAwaitingPermission = file
-                    _pendingDeleteIntentSender.value = result.intentSender
+                    deletionManager.requestDeletion(result.intentSender) { granted ->
+                        if (granted) {
+                            viewModelScope.launch {
+                                deleteFileUseCase.notifyFileDeleted(file.id)
+                                refresh()
+                            }
+                        }
+                    }
                 }
                 is DeleteResult.Failure -> {
                     refresh()
@@ -93,30 +138,22 @@ class InsightsViewModel(
         }
     }
 
-    fun onPermissionResult(granted: Boolean) {
-        _pendingDeleteIntentSender.value = null
-        val file = fileAwaitingPermission
-        fileAwaitingPermission = null
-        if (granted && file != null) {
-            viewModelScope.launch {
-                deleteFileUseCase.notifyFileDeleted(file.id)
-                refresh()
-            }
-        }
-    }
-
     companion object {
         fun provideFactory(
             getStorageInsightsUseCase: GetStorageInsightsUseCase,
             findDuplicatesUseCase: FindDuplicatesUseCase,
-            deleteFileUseCase: DeleteFileUseCase
+            deleteFileUseCase: DeleteFileUseCase,
+            storageRepository: StorageRepository,
+            deletionManager: DeletionManager
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return InsightsViewModel(
                     getStorageInsightsUseCase,
                     findDuplicatesUseCase,
-                    deleteFileUseCase
+                    deleteFileUseCase,
+                    storageRepository,
+                    deletionManager
                 ) as T
             }
         }

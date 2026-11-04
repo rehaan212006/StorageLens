@@ -17,6 +17,8 @@ import com.storagelens.app.domain.usecases.ScanStorageUseCase
 import com.storagelens.app.scanner.DuplicateDetector
 import com.storagelens.app.scanner.StorageScanner
 
+import com.storagelens.app.utils.DeletionManager
+
 /**
  * Dependency injection container for StorageLens.
  */
@@ -29,9 +31,14 @@ interface AppContainer {
     val findDuplicatesUseCase: FindDuplicatesUseCase
     val getStorageInsightsUseCase: GetStorageInsightsUseCase
     val deleteFileUseCase: DeleteFileUseCase
+    val deletionManager: DeletionManager
 }
 
 class DefaultAppContainer(private val application: Application) : AppContainer {
+    override val deletionManager: DeletionManager by lazy {
+        DeletionManager()
+    }
+
     override val preferencesRepository: UserPreferencesRepository by lazy {
         UserPreferencesRepository(application)
     }

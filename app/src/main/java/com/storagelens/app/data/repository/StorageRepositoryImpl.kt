@@ -71,10 +71,7 @@ class StorageRepositoryImpl(
     }
 
     override suspend fun createBatchDeleteRequest(items: List<FileItem>): DeleteResult {
-        val uris = items.mapNotNull { item ->
-            safDataSource.findMediaStoreUri(item.uri, item.path) ?: item.uri
-        }
-        return safDataSource.createDeleteRequest(uris)
+        return safDataSource.createBatchDeleteRequest(items)
     }
 
     override fun toggleDuplicateSelection(groupHash: String, fileId: String) {
