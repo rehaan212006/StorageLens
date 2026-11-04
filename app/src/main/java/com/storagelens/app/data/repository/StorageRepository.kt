@@ -1,6 +1,7 @@
 package com.storagelens.app.data.repository
 
 import android.net.Uri
+import com.storagelens.app.data.models.DeleteResult
 import com.storagelens.app.data.models.DuplicateGroup
 import com.storagelens.app.data.models.FileItem
 import com.storagelens.app.data.models.FolderItem
@@ -30,7 +31,9 @@ interface StorageRepository {
 
     suspend fun listTree(treeUri: Uri): Pair<List<FolderItem>, List<FileItem>>
 
-    suspend fun deleteFile(item: FileItem): Boolean
+    suspend fun deleteFile(item: FileItem): DeleteResult
+    suspend fun notifyFileDeleted(fileId: String)
+    suspend fun createBatchDeleteRequest(items: List<FileItem>): DeleteResult
     fun toggleDuplicateSelection(groupHash: String, fileId: String)
     suspend fun deleteDuplicatesInGroup(group: DuplicateGroup): Int
 

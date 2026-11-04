@@ -1,8 +1,10 @@
 package com.storagelens.app.ui.screens.insights
 
+import android.content.IntentSender
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.storagelens.app.data.models.DeleteResult
 import com.storagelens.app.data.models.DuplicateGroup
 import com.storagelens.app.data.models.FileItem
 import com.storagelens.app.domain.usecases.DeleteFileUseCase
@@ -28,6 +30,11 @@ class InsightsViewModel(
 
     private val _pendingDeleteFile = MutableStateFlow<FileItem?>(null)
     val pendingDeleteFile: StateFlow<FileItem?> = _pendingDeleteFile.asStateFlow()
+
+    private val _pendingDeleteIntentSender = MutableStateFlow<IntentSender?>(null)
+    val pendingDeleteIntentSender: StateFlow<IntentSender?> = _pendingDeleteIntentSender.asStateFlow()
+
+    private var fileAwaitingPermission: FileItem? = null
 
     init {
         refresh()
@@ -70,9 +77,31 @@ class InsightsViewModel(
     fun confirmDeleteFile() {
         val file = _pendingDeleteFile.value ?: return
         viewModelScope.launch {
-            deleteFileUseCase(file)
             _pendingDeleteFile.value = null
-            refresh()
+            when (val result = deleteFileUseCase(file)) {
+                is DeleteResult.Success -> {
+                    refresh()
+                }
+                is DeleteResult.RequiresPermission -> {
+                    fileAwaitingPermission = file
+                    _pendingDeleteIntentSender.value = result.intentSender
+                }
+                is DeleteResult.Failure -> {
+                    refresh()
+                }
+            }
+        }
+    }
+
+    fun onPermissionResult(granted: Boolean) {
+        _pendingDeleteIntentSender.value = null
+        val file = fileAwaitingPermission
+        fileAwaitingPermission = null
+        if (granted && file != null) {
+            viewModelScope.launch {
+                deleteFileUseCase.notifyFileDeleted(file.id)
+                refresh()
+            }
         }
     }
 

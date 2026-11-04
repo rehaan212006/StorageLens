@@ -1,8 +1,12 @@
 package com.storagelens.app.ui.screens.largefiles
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,8 +74,24 @@ fun LargeFilesScreen(
     val sortOrder by viewModel.sortOrder.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val pendingDeleteFile by viewModel.pendingDeleteFile.collectAsState()
+    val pendingIntentSender by viewModel.pendingDeleteIntentSender.collectAsState()
 
     var sortMenuExpanded by remember { mutableStateOf(false) }
+
+    // Scoped Storage deletion permission launcher (Android 10 & 11+)
+    val deletePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        viewModel.onPermissionResult(result.resultCode == Activity.RESULT_OK)
+    }
+
+    LaunchedEffect(pendingIntentSender) {
+        pendingIntentSender?.let { sender ->
+            deletePermissionLauncher.launch(
+                IntentSenderRequest.Builder(sender).build()
+            )
+        }
+    }
 
     val totalBytes = largeFiles.sumOf { it.sizeBytes }
 

@@ -5,6 +5,7 @@ import android.net.Uri
 import com.storagelens.app.data.datasource.FileSystemDataSource
 import com.storagelens.app.data.datasource.MediaStoreDataSource
 import com.storagelens.app.data.datasource.SafDataSource
+import com.storagelens.app.data.models.DeleteResult
 import com.storagelens.app.data.models.DuplicateGroup
 import com.storagelens.app.data.models.FileItem
 import com.storagelens.app.data.models.FolderItem
@@ -57,25 +58,23 @@ class StorageRepositoryImpl(
         return safDataSource.listTree(treeUri)
     }
 
-    override suspend fun deleteFile(item: FileItem): Boolean {
-        var deleted = false
-        // Try ContentResolver if it's a MediaStore URI
-        if (item.uri.scheme == "content") {
-            deleted = mediaStoreDataSource.deleteFile(item.uri)
-            if (!deleted) {
-                deleted = safDataSource.deleteDocument(item.uri)
-            }
-        }
-
-        // Try direct file delete if path is accessible
-        if (!deleted && item.path.isNotEmpty()) {
-            deleted = fileSystemDataSource.deleteFile(item.path)
-        }
-
-        if (deleted) {
+    override suspend fun deleteFile(item: FileItem): DeleteResult {
+        val result = safDataSource.deleteDocument(item.uri, item.path)
+        if (result is DeleteResult.Success) {
             storageScanner.removeDeletedFile(item.id)
         }
-        return deleted
+        return result
+    }
+
+    override suspend fun notifyFileDeleted(fileId: String) {
+        storageScanner.removeDeletedFile(fileId)
+    }
+
+    override suspend fun createBatchDeleteRequest(items: List<FileItem>): DeleteResult {
+        val uris = items.mapNotNull { item ->
+            safDataSource.findMediaStoreUri(item.uri, item.path) ?: item.uri
+        }
+        return safDataSource.createDeleteRequest(uris)
     }
 
     override fun toggleDuplicateSelection(groupHash: String, fileId: String) {
@@ -101,7 +100,7 @@ class StorageRepositoryImpl(
         for (fileId in group.selectedFiles) {
             val fileItem = group.files.find { it.id == fileId }
             if (fileItem != null) {
-                if (deleteFile(fileItem)) {
+                if (deleteFile(fileItem) is DeleteResult.Success) {
                     deletedCount++
                 }
             }

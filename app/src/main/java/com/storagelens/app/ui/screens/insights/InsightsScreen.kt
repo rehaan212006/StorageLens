@@ -1,5 +1,9 @@
 package com.storagelens.app.ui.screens.insights
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +35,7 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,8 +73,24 @@ fun InsightsScreen(
     val insights by viewModel.insights.collectAsState()
     val pendingDeleteGroup by viewModel.pendingDeleteGroup.collectAsState()
     val pendingDeleteFile by viewModel.pendingDeleteFile.collectAsState()
+    val pendingIntentSender by viewModel.pendingDeleteIntentSender.collectAsState()
 
     var selectedTab by remember { mutableStateOf(InsightTab.DUPLICATES) }
+
+    // Scoped Storage deletion permission launcher (Android 10 & 11+)
+    val deletePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        viewModel.onPermissionResult(result.resultCode == Activity.RESULT_OK)
+    }
+
+    LaunchedEffect(pendingIntentSender) {
+        pendingIntentSender?.let { sender ->
+            deletePermissionLauncher.launch(
+                IntentSenderRequest.Builder(sender).build()
+            )
+        }
+    }
 
     Column(
         modifier = modifier

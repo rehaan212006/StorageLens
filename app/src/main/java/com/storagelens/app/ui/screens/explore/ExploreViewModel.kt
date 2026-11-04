@@ -1,10 +1,12 @@
 package com.storagelens.app.ui.screens.explore
 
+import android.content.IntentSender
 import android.net.Uri
 import android.os.Environment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.storagelens.app.data.models.DeleteResult
 import com.storagelens.app.data.models.FileItem
 import com.storagelens.app.data.models.FolderItem
 import com.storagelens.app.data.models.SortOrder
@@ -53,6 +55,11 @@ class ExploreViewModel(
 
     private val _pendingDeleteFile = MutableStateFlow<FileItem?>(null)
     val pendingDeleteFile: StateFlow<FileItem?> = _pendingDeleteFile.asStateFlow()
+
+    private val _pendingDeleteIntentSender = MutableStateFlow<IntentSender?>(null)
+    val pendingDeleteIntentSender: StateFlow<IntentSender?> = _pendingDeleteIntentSender.asStateFlow()
+
+    private var fileAwaitingPermission: FileItem? = null
 
     init {
         loadDirectory(rootPath)
@@ -113,12 +120,30 @@ class ExploreViewModel(
     fun confirmDelete() {
         val file = _pendingDeleteFile.value ?: return
         viewModelScope.launch {
-            val success = deleteFileUseCase(file)
             _pendingDeleteFile.value = null
-            if (success) {
+            when (val result = deleteFileUseCase(file)) {
+                is DeleteResult.Success -> {
+                    _files.value = _files.value.filter { it.id != file.id }
+                }
+                is DeleteResult.RequiresPermission -> {
+                    fileAwaitingPermission = file
+                    _pendingDeleteIntentSender.value = result.intentSender
+                }
+                is DeleteResult.Failure -> {
+                    _errorMessage.value = result.message ?: "Could not delete file due to Android permission constraints."
+                }
+            }
+        }
+    }
+
+    fun onPermissionResult(granted: Boolean) {
+        _pendingDeleteIntentSender.value = null
+        val file = fileAwaitingPermission
+        fileAwaitingPermission = null
+        if (granted && file != null) {
+            viewModelScope.launch {
+                deleteFileUseCase.notifyFileDeleted(file.id)
                 _files.value = _files.value.filter { it.id != file.id }
-            } else {
-                _errorMessage.value = "Could not delete file due to Android permission constraints."
             }
         }
     }
