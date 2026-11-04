@@ -22,7 +22,11 @@ class ExploreViewModel(
     private val deleteFileUseCase: DeleteFileUseCase
 ) : ViewModel() {
 
-    private val rootPath = Environment.getExternalStorageDirectory().absolutePath
+    private val rootPath = try {
+        Environment.getExternalStorageDirectory()?.absolutePath ?: "/sdcard"
+    } catch (e: Exception) {
+        "/sdcard"
+    }
 
     private val _currentPath = MutableStateFlow(rootPath)
     val currentPath: StateFlow<String> = _currentPath.asStateFlow()

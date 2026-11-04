@@ -15,10 +15,17 @@ import com.storagelens.app.ui.theme.StorageLensTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
 
-        val app = application as StorageLensApplication
+        val app = application as? StorageLensApplication
+            ?: (applicationContext as? StorageLensApplication)
+            ?: run {
+                val fallback = StorageLensApplication()
+                fallback.container = DefaultAppContainer(fallback)
+                fallback
+            }
+
         val preferencesRepository = app.container.preferencesRepository
 
         setContent {

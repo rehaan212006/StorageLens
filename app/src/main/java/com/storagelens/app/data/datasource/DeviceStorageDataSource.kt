@@ -37,20 +37,6 @@ class DeviceStorageDataSource(private val context: Context) {
                 freeBytes = dataStat.availableBlocksLong * dataStat.blockSizeLong
             }
 
-            // On modern Android (API 26+), we can also query StorageStatsManager for UUID_DEFAULT
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                try {
-                    val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as? StorageManager
-                    if (storageManager != null) {
-                        val appSpecificTotal = storageManager.getPrimaryStorageVolume().uuid?.let { uuid ->
-                            // Optional custom UUID query
-                        }
-                    }
-                } catch (ignored: Exception) {
-                    // Fall back to StatFs which is always reliable and accurate
-                }
-            }
-
             val usedBytes = (totalBytes - freeBytes).coerceAtLeast(0L)
 
             StorageStats(

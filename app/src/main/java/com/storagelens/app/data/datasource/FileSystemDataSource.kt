@@ -16,7 +16,11 @@ import java.io.File
 class FileSystemDataSource {
 
     val rootPath: String
-        get() = Environment.getExternalStorageDirectory().absolutePath
+        get() = try {
+            Environment.getExternalStorageDirectory()?.absolutePath ?: "/sdcard"
+        } catch (e: Exception) {
+            "/sdcard"
+        }
 
     /**
      * Lists direct children (folders and files) of a directory path.

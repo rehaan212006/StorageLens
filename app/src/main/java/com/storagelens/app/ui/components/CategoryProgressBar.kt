@@ -62,12 +62,12 @@ fun MultiSegmentCategoryBar(
         // Draw categories
         for (category in StorageCategory.values()) {
             val catBytes = stats.categorySizes[category] ?: 0L
-            val weight = if (totalBytes > 0) (catBytes.toFloat() / totalBytes.toFloat()) * animationProgress.value else 0f
-            if (weight > 0.005f) {
+            val rawWeight = if (totalBytes > 0) (catBytes.toFloat() / totalBytes.toFloat()) * animationProgress.value else 0f
+            if (!rawWeight.isNaN() && !rawWeight.isInfinite() && rawWeight > 0.005f) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .weight(weight)
+                        .weight(rawWeight)
                         .background(category.color)
                 )
                 Spacer(modifier = Modifier.width(1.5.dp))
@@ -75,12 +75,12 @@ fun MultiSegmentCategoryBar(
         }
 
         // Available free space segment
-        val freeWeight = if (totalBytes > 0) (freeBytes.toFloat() / totalBytes.toFloat()) else 1f
-        if (freeWeight > 0.005f) {
+        val rawFree = if (totalBytes > 0) (freeBytes.toFloat() / totalBytes.toFloat()) else 1f
+        if (!rawFree.isNaN() && !rawFree.isInfinite() && rawFree > 0.005f) {
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .weight(freeWeight.coerceAtLeast(0.01f))
+                    .weight(rawFree.coerceAtLeast(0.01f))
                     .background(StorageLensTheme.colors.surfaceVariant)
             )
         }

@@ -40,8 +40,9 @@ fun CircularStorageGauge(
     val animatedProgress = remember { Animatable(0f) }
 
     LaunchedEffect(usedPercentage) {
+        val target = if (usedPercentage.isNaN() || usedPercentage.isInfinite()) 0f else (usedPercentage / 100f).coerceIn(0f, 1f)
         animatedProgress.animateTo(
-            targetValue = (usedPercentage / 100f).coerceIn(0f, 1f),
+            targetValue = target,
             animationSpec = tween(durationMillis = 1100, easing = FastOutSlowInEasing)
         )
     }

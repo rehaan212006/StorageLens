@@ -5,13 +5,16 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.storagelens.app.data.models.LargeFileFilter
 import com.storagelens.app.data.models.SortOrder
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "storage_lens_prefs")
 
@@ -32,7 +35,16 @@ class UserPreferencesRepository(private val context: Context) {
         val SHOW_HIDDEN_FILES = booleanPreferencesKey("show_hidden_files")
     }
 
-    val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
+    private val safePreferencesData: Flow<Preferences> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+
+    val themeMode: Flow<ThemeMode> = safePreferencesData.map { prefs ->
         val name = prefs[PreferencesKeys.THEME_MODE] ?: ThemeMode.DARK.name
         try {
             ThemeMode.valueOf(name)
@@ -41,7 +53,7 @@ class UserPreferencesRepository(private val context: Context) {
         }
     }
 
-    val defaultSortOrder: Flow<SortOrder> = context.dataStore.data.map { prefs ->
+    val defaultSortOrder: Flow<SortOrder> = safePreferencesData.map { prefs ->
         val name = prefs[PreferencesKeys.DEFAULT_SORT_ORDER] ?: SortOrder.LARGEST_FIRST.name
         try {
             SortOrder.valueOf(name)
@@ -50,7 +62,7 @@ class UserPreferencesRepository(private val context: Context) {
         }
     }
 
-    val largeFileFilter: Flow<LargeFileFilter> = context.dataStore.data.map { prefs ->
+    val largeFileFilter: Flow<LargeFileFilter> = safePreferencesData.map { prefs ->
         val name = prefs[PreferencesKeys.LARGE_FILE_THRESHOLD] ?: LargeFileFilter.ABOVE_100MB.name
         try {
             LargeFileFilter.valueOf(name)
@@ -59,11 +71,11 @@ class UserPreferencesRepository(private val context: Context) {
         }
     }
 
-    val lastScanTimestamp: Flow<Long> = context.dataStore.data.map { prefs ->
+    val lastScanTimestamp: Flow<Long> = safePreferencesData.map { prefs ->
         prefs[PreferencesKeys.LAST_SCAN_TIMESTAMP] ?: 0L
     }
 
-    val showHiddenFiles: Flow<Boolean> = context.dataStore.data.map { prefs ->
+    val showHiddenFiles: Flow<Boolean> = safePreferencesData.map { prefs ->
         prefs[PreferencesKeys.SHOW_HIDDEN_FILES] ?: false
     }
 

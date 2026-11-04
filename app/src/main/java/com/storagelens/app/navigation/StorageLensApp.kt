@@ -34,7 +34,13 @@ import com.storagelens.app.ui.screens.settings.SettingsViewModel
 @Composable
 fun StorageLensApp() {
     val context = LocalContext.current
-    val application = context.applicationContext as StorageLensApplication
+    val application = context.applicationContext as? StorageLensApplication
+        ?: (context as? android.app.Activity)?.application as? StorageLensApplication
+        ?: run {
+            val fallback = StorageLensApplication()
+            fallback.container = com.storagelens.app.DefaultAppContainer(fallback)
+            fallback
+        }
     val container = application.container
 
     val navController = rememberNavController()
