@@ -73,7 +73,7 @@ class FileSystemDataSource {
                 val cat = MimeUtils.resolveCategory(mime, child.absolutePath)
                 files.add(
                     FileItem(
-                        id = child.absolutePath.hashCode().toString(),
+                        id = child.absolutePath,
                         uri = Uri.fromFile(child),
                         name = child.name,
                         path = child.absolutePath,
@@ -89,6 +89,143 @@ class FileSystemDataSource {
         }
 
         Pair(folders, files)
+    }
+
+    /**
+     * Recursively traverses accessible shared storage directories (Documents, My Documents,
+     * Download, DCIM, Pictures, etc.) and discovers all accessible documents and media files.
+     */
+    suspend fun scanAllAccessibleFiles(
+        onProgress: ((count: Int, bytes: Long) -> Unit)? = null
+    ): Pair<List<FolderItem>, List<FileItem>> = withContext(Dispatchers.IO) {
+        val root = File(rootPath)
+        if (!root.exists() || !root.canRead()) {
+            return@withContext Pair(emptyList(), emptyList())
+        }
+
+        val allFiles = mutableListOf<FileItem>()
+        val topFolders = mutableListOf<FolderItem>()
+        var count = 0
+        var totalBytes = 0L
+
+        val rootChildren = try {
+            root.listFiles() ?: emptyArray()
+        } catch (e: Exception) {
+            emptyArray()
+        }
+
+        for (child in rootChildren) {
+            if (child.name.startsWith(".")) continue
+            val canonical = try { child.canonicalPath } catch (e: Exception) { child.absolutePath }
+            if (canonical.contains("/Android/data") || canonical.contains("/Android/obb")) continue
+
+            if (child.isDirectory) {
+                val stats = calculateFolderQuickStats(child, showHidden = false)
+                topFolders.add(
+                    FolderItem(
+                        path = child.absolutePath,
+                        name = child.name,
+                        sizeBytes = stats.first,
+                        fileCount = stats.second,
+                        subfolderCount = stats.third,
+                        lastModified = child.lastModified(),
+                        isAccessible = child.canRead()
+                    )
+                )
+            } else {
+                val size = child.length()
+                if (size > 0L) {
+                    val mime = MimeUtils.getMimeType(child.name)
+                    val cat = MimeUtils.resolveCategory(mime, child.absolutePath)
+                    allFiles.add(
+                        FileItem(
+                            id = child.absolutePath,
+                            uri = Uri.fromFile(child),
+                            name = child.name,
+                            path = child.absolutePath,
+                            sizeBytes = size,
+                            mimeType = mime,
+                            extension = MimeUtils.getExtension(child.name),
+                            lastModified = child.lastModified(),
+                            isDirectory = false,
+                            category = cat
+                        )
+                    )
+                    count++
+                    totalBytes += size
+                }
+            }
+        }
+
+        // Traverse accessible subfolders with BFS (max depth 6)
+        val visited = HashSet<String>()
+        val queue = ArrayDeque<Pair<File, Int>>()
+        for (folder in topFolders) {
+            android.util.Log.d("FileSystemDataSource", "Top folder: ${folder.name}, isAccessible=${folder.isAccessible}, path=${folder.path}")
+            if (!folder.path.endsWith("/Android")) {
+                queue.add(Pair(File(folder.path), 1))
+            }
+        }
+
+        while (queue.isNotEmpty()) {
+            val (dir, depth) = queue.removeFirst()
+            val canonical = try { dir.canonicalPath } catch (e: Exception) { dir.absolutePath }
+            if (visited.contains(canonical)) continue
+            visited.add(canonical)
+
+            val children = try {
+                dir.listFiles() ?: emptyArray()
+            } catch (e: Exception) {
+                emptyArray()
+            }
+
+            android.util.Log.d("FileSystemDataSource", "Dir: ${dir.name}, canRead=${dir.canRead()}, children=${children.size}")
+
+
+            for (child in children) {
+                if (child.name.startsWith(".")) continue
+                val childCanonical = try { child.canonicalPath } catch (e: Exception) { child.absolutePath }
+                if (childCanonical.contains("/Android/data") || childCanonical.contains("/Android/obb")) continue
+
+                if (child.isDirectory) {
+                    if (depth < 6) {
+                        queue.add(Pair(child, depth + 1))
+                    }
+                } else {
+                    val size = child.length()
+                    if (child.name.contains("PETIGO", ignoreCase = true) || child.parent?.contains("Documents") == true) {
+                        android.util.Log.d("FileSystemDataSource", "Found file in FS: ${child.name}, size=$size, canRead=${child.canRead()}")
+                    }
+                    if (size > 0L) {
+                        val mime = MimeUtils.getMimeType(child.name)
+                        val cat = MimeUtils.resolveCategory(mime, child.absolutePath)
+                        allFiles.add(
+                            FileItem(
+                                id = child.absolutePath,
+                                uri = Uri.fromFile(child),
+                                name = child.name,
+                                path = child.absolutePath,
+                                sizeBytes = size,
+                                mimeType = mime,
+                                extension = MimeUtils.getExtension(child.name),
+                                lastModified = child.lastModified(),
+                                isDirectory = false,
+                                category = cat
+                            )
+                        )
+                        count++
+                        totalBytes += size
+
+                        if (count % 100 == 0) {
+                            onProgress?.invoke(count, totalBytes)
+                        }
+                    }
+                }
+            }
+        }
+
+        android.util.Log.i("FileSystemDataSource", "scanAllAccessibleFiles found ${allFiles.size} files across ${topFolders.size} folders")
+        Pair(topFolders, allFiles)
     }
 
     /**

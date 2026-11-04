@@ -34,6 +34,8 @@ class DuplicateDetector(private val context: Context) {
         val totalCandidates = sizeCandidates.values.sumOf { it.size }
         var processedCount = 0
 
+        android.util.Log.i("DuplicateDetector", "findDuplicates: candidate size groups=${sizeCandidates.size}, total candidate files=$totalCandidates")
+
         val duplicateGroups = mutableListOf<DuplicateGroup>()
 
         // Stage 2: Compute SHA-256 for each candidate
@@ -48,6 +50,7 @@ class DuplicateDetector(private val context: Context) {
                 onProgress?.invoke(processedCount, totalCandidates, fileItem.name)
 
                 val hash = calculateHashForFileItem(fileItem)
+                android.util.Log.d("DuplicateDetector", "Hash for ${fileItem.name} (size $size, path=${fileItem.path}, uri=${fileItem.uri}): $hash")
                 if (hash != null) {
                     hashMap.getOrPut(hash) { mutableListOf() }.add(fileItem)
                 }
@@ -87,13 +90,35 @@ class DuplicateDetector(private val context: Context) {
 
         // 2. Try direct ContentResolver URI
         try {
-            context.contentResolver.openInputStream(fileItem.uri)?.use { stream ->
-                val hash = HashUtils.calculateSha256(stream)
-                if (hash != null) return hash
+            if (fileItem.uri != android.net.Uri.EMPTY && fileItem.uri.scheme == "content") {
+                context.contentResolver.openInputStream(fileItem.uri)?.use { stream ->
+                    val hash = HashUtils.calculateSha256(stream)
+                    if (hash != null) return hash
+                }
             }
         } catch (ignored: Exception) {}
 
-        // 3. Fallback: query specific media type URIs for Scoped Storage compatibility
+        // 3. Fallback: Query MediaStore for content URI by DATA column
+        if (fileItem.path.isNotEmpty()) {
+            try {
+                val filesUri = MediaStore.Files.getContentUri("external")
+                val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+                val selection = "${MediaStore.Files.FileColumns.DATA} = ?"
+                val selectionArgs = arrayOf(fileItem.path)
+                context.contentResolver.query(filesUri, projection, selection, selectionArgs, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val id = cursor.getLong(0)
+                        val contentUri = ContentUris.withAppendedId(filesUri, id)
+                        context.contentResolver.openInputStream(contentUri)?.use { stream ->
+                            val hash = HashUtils.calculateSha256(stream)
+                            if (hash != null) return hash
+                        }
+                    }
+                }
+            } catch (ignored: Exception) {}
+        }
+
+        // 4. Fallback: query specific media type URIs for Scoped Storage compatibility
         val idLong = fileItem.id.toLongOrNull()
         if (idLong != null) {
             val candidates = listOf(

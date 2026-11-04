@@ -58,6 +58,7 @@ class MediaStoreDataSource(private val context: Context) {
                 val mediaTypeCol = cursor.getColumnIndex(MediaStore.Files.FileColumns.MEDIA_TYPE)
 
                 var count = 0
+                var docCount = 0
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idCol)
                     val size = cursor.getLong(sizeCol)
@@ -69,6 +70,10 @@ class MediaStoreDataSource(private val context: Context) {
                     val path = if (dataCol != -1) cursor.getString(dataCol) ?: "" else ""
                     val mediaType = if (mediaTypeCol != -1) cursor.getInt(mediaTypeCol) else -1
 
+                    if (name.contains("PETIGO", ignoreCase = true) || path.contains("Documents", ignoreCase = true)) {
+                        android.util.Log.d("MediaStoreDataSource", "Found document/PETIGO in query: id=$id, name=$name, path=$path, mediaType=$mediaType, mime=$mime")
+                    }
+
                     val specificUri = when (mediaType) {
                         MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
                         MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
@@ -77,6 +82,9 @@ class MediaStoreDataSource(private val context: Context) {
                     }
                     val fileUri = ContentUris.withAppendedId(specificUri, id)
                     val category = MimeUtils.resolveCategory(mime, path.ifEmpty { name })
+                    if (category == StorageCategory.DOCUMENTS) {
+                        docCount++
+                    }
                     val extension = MimeUtils.getExtension(name)
 
                     val item = FileItem(
@@ -99,9 +107,10 @@ class MediaStoreDataSource(private val context: Context) {
                         onProgress?.invoke(count, totalBytes)
                     }
                 }
+                android.util.Log.i("MediaStoreDataSource", "Query finished: total count=$count, docCount=$docCount")
             }
         } catch (e: Exception) {
-            // MediaStore query error fallback
+            android.util.Log.e("MediaStoreDataSource", "MediaStore query error: ${e.message}", e)
         }
 
         fileList

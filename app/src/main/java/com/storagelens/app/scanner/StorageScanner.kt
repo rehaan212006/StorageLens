@@ -92,30 +92,38 @@ class StorageScanner(
 
                 coroutineContext.ensureActive()
 
-                // 3. Scan top-level shared storage folders
+                // 3. Scan shared storage folders and documents
                 _scanState.value = ScanState.Scanning(
                     progress = 0.55f,
-                    currentPhase = "Cataloging shared directory structures...",
+                    currentPhase = "Scanning device documents & folders...",
                     scannedFilesCount = mediaFiles.size,
                     scannedBytes = mediaFiles.sumOf { it.sizeBytes }
                 )
 
-                val (rootFolders, rootFiles) = fileSystemDataSource.listDirectory(
-                    fileSystemDataSource.rootPath,
-                    showHidden = false
-                )
+                val (scannedFolders, fsFiles) = fileSystemDataSource.scanAllAccessibleFiles { count, bytes ->
+                    _scanState.value = ScanState.Scanning(
+                        progress = 0.55f + (0.15f * (count.coerceAtMost(3000) / 3000f)),
+                        currentPhase = "Cataloging documents ($count found)...",
+                        scannedFilesCount = mediaFiles.size + count,
+                        scannedBytes = mediaFiles.sumOf { it.sizeBytes } + bytes
+                    )
+                }
 
                 // Merge and deduplicate file records
                 val allFilesMap = LinkedHashMap<String, FileItem>()
                 for (f in mediaFiles) {
-                    allFilesMap[f.path.ifEmpty { f.name }] = f
+                    val key = f.path.ifEmpty { f.name }
+                    allFilesMap[key] = f
                 }
-                for (f in rootFiles) {
-                    allFilesMap[f.path] = f
+                for (f in fsFiles) {
+                    val key = f.path.ifEmpty { f.name }
+                    if (!allFilesMap.containsKey(key)) {
+                        allFilesMap[key] = f
+                    }
                 }
                 val mergedFiles = allFilesMap.values.toList()
                 _scannedFiles.value = mergedFiles
-                _topFolders.value = rootFolders.sortedByDescending { it.sizeBytes }
+                _topFolders.value = scannedFolders.sortedByDescending { it.sizeBytes }
 
                 coroutineContext.ensureActive()
 
